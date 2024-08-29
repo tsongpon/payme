@@ -1,17 +1,11 @@
 package qr
 
 import (
-	"bytes"
-	"fmt"
-	"image"
-	"image/png"
-	"os"
 	"regexp"
 	"strconv"
 
-	"github.com/yousifnimah/Cryptx/CRC16"
-
 	"github.com/skip2/go-qrcode"
+	"github.com/yousifnimah/Cryptx/CRC16"
 
 	promptpayqr "github.com/kazekim/promptpay-qr-go"
 )
@@ -24,13 +18,6 @@ type qrPromptPayField struct {
 	subField []*qrPromptPayField
 }
 
-const (
-	PAYLOAD_FORMAT_ID       = "00"
-	POI_METHOD_ID           = "01"
-	MERCHANT_INFORMATION_ID = "29"
-	PROMPTPAY_APP_ID        = "00"
-)
-
 func CreateQRCode(target string, amount int) string {
 	amtStt := strconv.Itoa(amount)
 	qr := promptpayqr.New().GeneratePayload(target, &amtStt)
@@ -38,51 +25,19 @@ func CreateQRCode(target string, amount int) string {
 	return qr
 }
 
-func CraeteQRImage(qrStr string) image.Image {
-	var pngImage []byte
-	pngImage, err := qrcode.Encode(qrStr, qrcode.Medium, 256)
-	if err != nil {
-		panic(err)
-	}
-
-	img, _, _ := image.Decode(bytes.NewReader(pngImage))
-
-	return img
+func QRCodeToImage(qrCode string) []byte {
+	png, _ := qrcode.Encode(qrCode, qrcode.Medium, 256)
+	return png
 }
 
-func QRCodeToImage(qrStr string) {
-	var pngImage []byte
-	pngImage, err := qrcode.Encode(qrStr, qrcode.Medium, 256)
-	if err != nil {
-		panic(err)
-	}
-
-	img, _, _ := image.Decode(bytes.NewReader(pngImage))
-
-	//save the imgByte to file
-	out, err := os.Create("./QRImg.png")
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	err = png.Encode(out, img)
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
-
-func CalChecksum(data string) string {
+func calChecksum(data string) string {
 	Input := []byte(data)          //string to slice of bytes
 	AlgorithmName := "CCITT_FALSE" //CRC-8 algorithm name from supported table
 	checksumHex := CRC16.ResultHex(Input, AlgorithmName)
 	return checksumHex
 }
 
-func CreatePrompPayQR(target string, amount float64) string {
+func CreatePrompPayQRCode(target string, amount float64) string {
 	payloadFormatIndicator := qrPromptPayField{id: "00", name: "Payload Format Indicator", length: 2, value: "01"}
 
 	var poiMethod qrPromptPayField
@@ -109,7 +64,7 @@ func CreatePrompPayQR(target string, amount float64) string {
 	qr := serialize(payloadFormatIndicator) + serialize(poiMethod) + serialize(merchantAccountInformation) + serialize(transactionAmt) + serialize(country) + serialize(currency)
 	checksum := qrPromptPayField{id: "63", name: "CRC 16 Chcksum", length: 4}
 	qr = qr + serialize(checksum)
-	qr = qr + CalChecksum(qr)[2:6]
+	qr = qr + calChecksum(qr)[2:6]
 
 	return qr
 }
