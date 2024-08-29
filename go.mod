@@ -1,6 +1,6 @@
 module github.com/tsongpon/payme
 
-go 1.22.5
+go 1.21.11
 
 require github.com/sigurn/crc16 v0.0.0-20240131213347-83fcde1e29d1
 
