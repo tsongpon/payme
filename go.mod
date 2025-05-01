@@ -5,6 +5,12 @@ go 1.21.11
 require github.com/sigurn/crc16 v0.0.0-20240131213347-83fcde1e29d1
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
+	golang.org/x/time v0.5.0 // indirect
+)
+
+require (
 	github.com/fogleman/gg v1.3.0 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/kazekim/promptpay-qr-go v1.0.1 // indirect

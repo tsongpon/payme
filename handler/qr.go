@@ -13,7 +13,10 @@ func CreateQRCode(c echo.Context) error {
 	if err := c.Bind(r); err != nil {
 		return err
 	}
-	qrCode := qr.CreatePrompPayQRCode(r.Target, r.Amount)
+	qrCode, err := qr.CreatePrompPayQRCode(r.Target, r.Amount)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Error")
+	}
 	data := qr.QRCodeToImage(qrCode)
 	return c.Blob(http.StatusOK, "image/png", data)
 }

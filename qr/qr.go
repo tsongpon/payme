@@ -1,6 +1,7 @@
 package qr
 
 import (
+	"errors"
 	"regexp"
 	"strconv"
 
@@ -8,6 +9,11 @@ import (
 	"github.com/yousifnimah/Cryptx/CRC16"
 
 	promptpayqr "github.com/kazekim/promptpay-qr-go"
+)
+
+const (
+	PROPTPAY_APPLICATION_ID = "A000000677010111"
+	THB_ISO_CURRENCY_CODE   = "764"
 )
 
 type qrPromptPayField struct {
@@ -31,13 +37,13 @@ func QRCodeToImage(qrCode string) []byte {
 }
 
 func calChecksum(data string) string {
-	Input := []byte(data)          //string to slice of bytes
-	AlgorithmName := "CCITT_FALSE" //CRC-8 algorithm name from supported table
-	checksumHex := CRC16.ResultHex(Input, AlgorithmName)
+	input := []byte(data)          //string to slice of bytes
+	algorithmName := "CCITT_FALSE" //CRC-8 algorithm name from supported table
+	checksumHex := CRC16.ResultHex(input, algorithmName)
 	return checksumHex
 }
 
-func CreatePrompPayQRCode(target string, amount float64) string {
+func CreatePrompPayQRCode(target string, amount float64) (string, error) {
 	payloadFormatIndicator := qrPromptPayField{id: "00", name: "Payload Format Indicator", length: 2, value: "01"}
 
 	var poiMethod qrPromptPayField
@@ -47,13 +53,16 @@ func CreatePrompPayQRCode(target string, amount float64) string {
 		poiMethod = qrPromptPayField{id: "01", length: 2, name: "Point of Initiation Method", value: "12"}
 	}
 
-	applicationIDSubField := qrPromptPayField{id: "00", name: "Application ID", length: 16, value: "A000000677010111"}
-	promptPayPhoneNumberSubField := qrPromptPayField{id: "01", name: "Prompt phone number", length: 13, value: formatTraget(target)}
+	applicationIDSubField := qrPromptPayField{id: "00", name: "Application ID", length: 16, value: PROPTPAY_APPLICATION_ID}
+	formattedTarget := formatTraget(target)
+	if formattedTarget == "" {
+		return "", errors.New("unknown target format")
+	}
+	promptPayPhoneNumberSubField := qrPromptPayField{id: "01", name: "Prompt phone number", length: 13, value: formattedTarget}
 	merchantAccountInformation := qrPromptPayField{id: "29", length: 37, name: "Marchant Account Information",
 		subField: []*qrPromptPayField{&applicationIDSubField, &promptPayPhoneNumberSubField}}
 
-	thbISOCurrencyCode := "764"
-	currency := qrPromptPayField{id: "53", name: "Transaction Currency", length: 3, value: thbISOCurrencyCode}
+	currency := qrPromptPayField{id: "53", name: "Transaction Currency", length: 3, value: THB_ISO_CURRENCY_CODE}
 	var transactionAmt qrPromptPayField
 	if amount != 0.0 {
 		amountVal := formatAmount(amount)
@@ -66,7 +75,7 @@ func CreatePrompPayQRCode(target string, amount float64) string {
 	qr = qr + serialize(checksum)
 	qr = qr + calChecksum(qr)[2:6]
 
-	return qr
+	return qr, nil
 }
 
 func serialize(field qrPromptPayField) string {
