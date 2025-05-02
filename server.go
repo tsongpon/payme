@@ -10,6 +10,6 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.CORS())
 	e.POST("/qrcode", handler.CreateQRCode)
-	// e.GET("/healthz", func(c echo.Context) error { return c.String(200, "ok") })
+	e.GET("/ping", func(c echo.Context) error { return c.String(200, "pong") })
 	e.Logger.Fatal(e.Start(":8080"))
 }
